@@ -6,7 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
+//	"path"
 //	"path/filepath"
 	"strings"
 )
@@ -21,7 +21,7 @@ func dirTree(out io.Writer, currentPath string, full bool) error{
 		return err
 	}
 	
-	onlyDirs := 0
+	onlyDirs := 0 //these two vars for counting directories among all files for normal working with tabs and lines
 	indexDir := 0
 	
 	//sum amount of dirs
@@ -48,7 +48,6 @@ func dirTree(out io.Writer, currentPath string, full bool) error{
 		}
 		//check if we should display file info
 		if file.IsDir() || file.Mode().IsRegular() && full {
-			
 			parts := strings.Split(currentPath, string(os.PathSeparator))
 			if len(parts) > 1 {
 				for i := 0; i < len(parts) - 1; i++ {
@@ -78,7 +77,7 @@ func dirTree(out io.Writer, currentPath string, full bool) error{
 		}
 		//go recursive into another dir
 		if file.IsDir() {
-			dirTree(out, path.Join(currentPath, file.Name()), full)
+			dirTree(out, currentPath + string(os.PathSeparator) + file.Name(), full)
 		}	
 	}
 	
