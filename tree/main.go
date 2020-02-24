@@ -1,21 +1,16 @@
 package main
 
 import (
-//	"flag"
+	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
-//	"path"
-//	"path/filepath"
-	"strings"
 )
 
-var prefixes []string //Unfortunately cannot avoid global value
-
-func dirTree(out io.Writer, currentPath string, full bool) error{
+func dirTree(out *bytes.Buffer, currentPath string, full bool) error{
 	var fileSize string //for full output. Show file.Size()
-
+	var prefix string
+	
 	files, err := ioutil.ReadDir(currentPath)
 	if err != nil {
 		return err
@@ -48,39 +43,30 @@ func dirTree(out io.Writer, currentPath string, full bool) error{
 		}
 		//check if we should display file info
 		if file.IsDir() || file.Mode().IsRegular() && full {
-			parts := strings.Split(currentPath, string(os.PathSeparator))
-			if len(parts) > 1 {
-				for i := 0; i < len(parts) - 1; i++ {
-				
-					out.Write([]byte(prefixes[i]))
-				}
-			}
-			
+			os.Stdout.Write(out.Bytes())
 			//if it is the last dir/file in list then display truncated line
 			if index == len(files) - 1 && full || indexDir == onlyDirs  && !full {
-				out.Write([]byte(`└───`))
-				if len(prefixes) >= len(parts) {
-					prefixes[len(parts)-1] = "\t"
-				} else {
-					prefixes = append(prefixes, "\t")
-				}
+				os.Stdout.Write([]byte(`└───`))
+				os.Stdout.Write([]byte("" + file.Name() + fileSize + "\n"))
+				prefix = "\t"
 			} else if index < len(files) - 1 && full || indexDir < onlyDirs && !full {
-				out.Write([]byte(`├───`))
-				if len(prefixes) >= len(parts) {
-					prefixes[len(parts)-1] = "│\t"
-				} else {
-                                        prefixes = append(prefixes, "│\t")
-                                }
+				os.Stdout.Write([]byte(`├───`))
+				os.Stdout.Write([]byte("" + file.Name() + fileSize + "\n"))
+				prefix = "│\t"
 			}
 			
-			out.Write([]byte("" + file.Name() + fileSize + "\n"))
 		}
 		//go recursive into another dir
 		if file.IsDir() {
+			bufStr := out.String()		
+			out.Write([]byte(prefix))
 			dirTree(out, currentPath + string(os.PathSeparator) + file.Name(), full)
-		}	
-	}
+			out.Reset() //clear buffer and full with old value of prefix
+			out.Write([]byte(bufStr))
+		}
 	
+	}
+
 	
 	/*
 	//Trying to use way without recurse, but filepath.Walk doesn't provide info about full path :(
@@ -140,9 +126,11 @@ func main(){
 			os.Exit(1)
 	}
 	
-	out := (os.Stdout)
+	out := new(bytes.Buffer)
 	err = dirTree(out, currentPath, full)
 	if err != nil {
 		os.Exit(1)
+	} else {
+		//os.Stdout.Write(out.Bytes())
 	}	
 }
